@@ -20,8 +20,9 @@ transport, STT, turn-taking, and TTS, and calls this service as its custom LLM.
 
 Setup:
 1. Deploy this service and expose it publicly (Tailscale Funnel — see README).
-2. In the ElevenLabs CAI agent settings, set the LLM to **Custom LLM** and
-   point it at `https://<public-host>/v1/chat/completions`.
+2. In the ElevenLabs CAI agent settings, set the LLM to **Custom LLM** and set
+   the Server URL to the base `https://<public-host>/v1` (ElevenLabs appends
+   `/chat/completions` itself — see the runbook below).
 3. Pick an ElevenLabs voice for TTS.
 
 ```
@@ -59,12 +60,21 @@ all), parses the SSE stream the way the provider does, and asserts the framing
 
 ### Going live (needs an account + a public URL)
 
-1. Expose the local server with a tunnel — `ngrok http 8080` now, or the
-   Tailscale Funnel once deployed (milestone 6).
-2. In the ElevenLabs CAI agent, set LLM → **Custom LLM**, Server URL →
-   `https://<tunnel-host>/v1/chat/completions`.
-3. Open the agent's test chat and send a message; the reply should stream back.
-   That round-trip closes milestone 4. Add a voice and call it for milestone 5+.
+1. Run the agent: `uvicorn voice_agent.server:app --port 8080` (needs
+   `ANTHROPIC_API_KEY` in `.env`).
+2. Expose it over public HTTPS — `ngrok http 8080` now (copy the
+   `https://….ngrok-free.app` URL), or the Tailscale Funnel once deployed
+   (milestone 6, which gives a stable URL — ngrok's changes each restart).
+3. In the ElevenLabs CAI agent, set LLM → **Custom LLM** and fill in:
+   - **Server URL**: `https://<tunnel-host>/v1` — the base ending in `/v1`,
+     *not* `/v1/chat/completions`; ElevenLabs appends that.
+   - **Model ID**: any string (e.g. `voice-agent`); this server ignores it and
+     uses its own configured Claude model.
+   - **API key**: the UI requires a secret named `OPENAI_API_KEY` — this server
+     does no auth, so any placeholder value (e.g. `unused`) works.
+4. Open the agent's test chat and send a message; the reply should stream back,
+   and you'll see the POST hit `/v1/chat/completions` in the uvicorn log. That
+   round-trip closes milestone 4. Add a voice and call it for milestone 5+.
 
 ## Option B (future) — Vapi or Retell + ElevenLabs voice
 

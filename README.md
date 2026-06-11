@@ -86,7 +86,7 @@ steps to go live against a real ElevenLabs agent.
 | 1 | LangGraph agent + local text REPL | Done |
 | 2 | Tools and persistent memory (checkpointer) | Done |
 | 3 | OpenAI-compatible custom-LLM endpoint (FastAPI) | Done |
-| 4 | Connect ElevenLabs Conversational AI, text round-trip | In progress |
+| 4 | Connect ElevenLabs Conversational AI, text round-trip | Done |
 | 5 | Containerize and deploy to panda-worker via local registry | Upcoming |
 | 6 | Tailscale Funnel exposes the webhook to the provider cloud | Upcoming |
 | 7 | Turn latency / token-cost metrics in Grafana | Upcoming |

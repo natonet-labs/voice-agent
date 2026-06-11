@@ -1,10 +1,14 @@
-"""Local text REPL for the agent — milestone 1, no voice provider needed.
+"""Local text REPL for the agent — milestone 1+, no voice provider needed.
 
     pip install -e .
     voice-agent-chat
+
+Uses a stable thread id so the conversation persists across restarts (via the
+SQLite checkpointer). Override with VOICE_AGENT_THREAD, or delete the agent db
+to start fresh.
 """
 
-import uuid
+import os
 
 from langchain_core.messages import HumanMessage
 
@@ -12,8 +16,10 @@ from voice_agent.agent import agent
 
 
 def main() -> None:
-    config = {"configurable": {"thread_id": uuid.uuid4().hex}}
-    print("voice-agent local chat — type 'exit' to quit\n")
+    thread_id = os.environ.get("VOICE_AGENT_THREAD", "local-cli")
+    config = {"configurable": {"thread_id": thread_id}}
+    print(f"voice-agent local chat — thread '{thread_id}' (history persists across restarts)")
+    print("type 'exit' to quit\n")
     while True:
         try:
             user = input("you> ").strip()

@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     llm_model: str = "claude-sonnet-4-6"
 
+    # Persistent state: LangGraph checkpointer + long-term facts (SQLite)
+    agent_db_path: str = "data/agent.sqlite"
+
     # Voice providers (Option A now, Option B later)
     elevenlabs_api_key: str = ""
     vapi_api_key: str = ""

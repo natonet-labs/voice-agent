@@ -74,7 +74,7 @@ curl -s localhost:8080/v1/chat/completions \
 | # | Milestone | Status |
 |---|---|---|
 | 1 | LangGraph agent + local text REPL | Done |
-| 2 | Tools and persistent memory (checkpointer) | Upcoming |
+| 2 | Tools and persistent memory (checkpointer) | Done |
 | 3 | OpenAI-compatible custom-LLM endpoint (FastAPI) | Done |
 | 4 | Connect ElevenLabs Conversational AI, text round-trip | Upcoming |
 | 5 | Containerize and deploy to panda-worker via local registry | Upcoming |
@@ -86,10 +86,13 @@ curl -s localhost:8080/v1/chat/completions \
 
 ```
 src/voice_agent/
-  agent.py     LangGraph StateGraph — the portable brain
-  server.py    FastAPI OpenAI-compatible endpoint + /health + /metrics
-  chat.py      local text REPL (milestone 1)
-  config.py    env-driven settings
-deploy/k8s/    Deployment (pinned to panda-worker) + Service + Secret example
-docs/          provider integration notes
+  agent.py        LangGraph StateGraph + persistent SQLite checkpointer
+  tools.py        agent tools (time, timezone, calculator, remember/recall)
+  memory_store.py SQLite-backed long-term facts (cross-conversation memory)
+  server.py       FastAPI OpenAI-compatible endpoint + /health + /metrics
+  chat.py         local text REPL (stable thread, persists across restarts)
+  config.py       env-driven settings
+deploy/k8s/       Deployment (pinned to panda-worker) + Service + Secret example
+docs/             provider integration notes
+data/             local SQLite state (gitignored)
 ```

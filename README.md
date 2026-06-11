@@ -73,9 +73,9 @@ curl -s localhost:8080/v1/chat/completions \
 
 | # | Milestone | Status |
 |---|---|---|
-| 1 | LangGraph agent + local text REPL | In Progress |
+| 1 | LangGraph agent + local text REPL | Done |
 | 2 | Tools and persistent memory (checkpointer) | Upcoming |
-| 3 | OpenAI-compatible custom-LLM endpoint (FastAPI) | In Progress |
+| 3 | OpenAI-compatible custom-LLM endpoint (FastAPI) | Done |
 | 4 | Connect ElevenLabs Conversational AI, text round-trip | Upcoming |
 | 5 | Containerize and deploy to panda-worker via local registry | Upcoming |
 | 6 | Tailscale Funnel exposes the webhook to the provider cloud | Upcoming |

@@ -47,11 +47,12 @@ SYSTEM_PROMPT = (
 
 def build_agent():
     """Compile and return the agent graph."""
-    model = ChatAnthropic(
-        model=settings.llm_model,
-        temperature=0.3,
-        api_key=settings.anthropic_api_key or None,
-    ).bind_tools(TOOLS)
+    # Pass api_key only when set (e.g. from .env); otherwise let ChatAnthropic
+    # fall back to the ANTHROPIC_API_KEY environment variable.
+    model_kwargs = {"model": settings.llm_model, "temperature": 0.3}
+    if settings.anthropic_api_key:
+        model_kwargs["api_key"] = settings.anthropic_api_key
+    model = ChatAnthropic(**model_kwargs).bind_tools(TOOLS)
 
     def chatbot(state: MessagesState) -> dict:
         messages = [SystemMessage(content=SYSTEM_PROMPT), *state["messages"]]

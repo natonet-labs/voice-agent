@@ -23,8 +23,7 @@ spec:
       containers:
         - name: voice-agent
           # Built and pushed to the control-plane local registry (NodePort 32034).
-          # Replace REGISTRY_HOST with the control-plane address reachable from the worker.
-          image: REGISTRY_HOST:32034/voice-agent:0.1.0
+          image: 192.168.7.63:32034/voice-agent:0.1.0
           ports:
             - name: http
               containerPort: 8080

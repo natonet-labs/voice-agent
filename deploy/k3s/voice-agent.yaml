@@ -23,7 +23,7 @@ spec:
       containers:
         - name: voice-agent
           # Built and pushed to the control-plane local registry (NodePort 32034).
-          image: 192.168.7.63:32034/voice-agent:0.1.0
+          image: panda-control:32034/voice-agent:0.1.0
           ports:
             - name: http
               containerPort: 8080

@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voice-agent
+  labels:
+    app: voice-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: voice-agent
+  template:
+    metadata:
+      labels:
+        app: voice-agent
+    spec:
+      # Pin to the worker: keeps the LangGraph load off panda-control so the
+      # control plane stays free for the host-native NPU CV services.
+      # To let it use BOTH nodes later (HPA / redundancy), remove this block
+      # and add a podAntiAffinity instead.
+      nodeSelector:
+        kubernetes.io/hostname: panda-worker
+      containers:
+        - name: voice-agent
+          # Built and pushed to the control-plane local registry (NodePort 32034).
+          # Replace REGISTRY_HOST with the control-plane address reachable from the worker.
+          image: REGISTRY_HOST:32034/voice-agent:0.1.0
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: voice-agent-secrets
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: voice-agent
+  labels:
+    app: voice-agent
+  annotations:
+    # Scraped by Prometheus on panda-control.
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "8080"
+spec:
+  selector:
+    app: voice-agent
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+  type: ClusterIP

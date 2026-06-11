@@ -1,7 +1,7 @@
 # Voice Agent
 
 ![Status](https://img.shields.io/badge/Status-In%20Progress-yellow)
-![Phase](https://img.shields.io/badge/Phase-4%20Provider%20Round--trip-blue)
+![Phase](https://img.shields.io/badge/Phase-5%20Deployed%20to%20K3s-blue)
 ![LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-1C3C3C)
 ![FastAPI](https://img.shields.io/badge/Serving-FastAPI-009688?logo=fastapi&logoColor=white)
 ![Claude](https://img.shields.io/badge/LLM-Claude-D97757)
@@ -87,7 +87,7 @@ steps to go live against a real ElevenLabs agent.
 | 2 | Tools and persistent memory (checkpointer) | Done |
 | 3 | OpenAI-compatible custom-LLM endpoint (FastAPI) | Done |
 | 4 | Connect ElevenLabs Conversational AI, text round-trip | Done |
-| 5 | Containerize and deploy to panda-worker via local registry | Upcoming |
+| 5 | Containerize and deploy to panda-worker via local registry | Done |
 | 6 | Tailscale Funnel exposes the webhook to the provider cloud | Upcoming |
 | 7 | Turn latency / token-cost metrics in Grafana | Upcoming |
 | 8 | Option B: front with Vapi or Retell (config-only) | Future |

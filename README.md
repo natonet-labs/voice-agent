@@ -103,7 +103,7 @@ src/voice_agent/
   chat.py         local text REPL (stable thread, persists across restarts)
   config.py       env-driven settings
 scripts/          elevenlabs_sim.py — replay the provider's request locally
-deploy/k8s/       Deployment (pinned to panda-worker) + Service + Secret example
+deploy/k3s/       Deployment (pinned to panda-worker) + Service + Secret example
 docs/             provider integration notes
 data/             local SQLite state (gitignored)
 ```

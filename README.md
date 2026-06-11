@@ -1,7 +1,7 @@
 # Voice Agent
 
 ![Status](https://img.shields.io/badge/Status-In%20Progress-yellow)
-![Phase](https://img.shields.io/badge/Phase-1%20Bootstrap-blue)
+![Phase](https://img.shields.io/badge/Phase-4%20Provider%20Round--trip-blue)
 ![LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-1C3C3C)
 ![FastAPI](https://img.shields.io/badge/Serving-FastAPI-009688?logo=fastapi&logoColor=white)
 ![Claude](https://img.shields.io/badge/LLM-Claude-D97757)
@@ -69,6 +69,16 @@ curl -s localhost:8080/v1/chat/completions \
   -d '{"messages":[{"role":"user","content":"hello"}]}' | jq
 ```
 
+Prove the streaming round-trip the way ElevenLabs will call it (real
+token-by-token SSE, terminated by `[DONE]`):
+
+```bash
+python scripts/elevenlabs_sim.py "what time is it in Tokyo?"
+```
+
+See [docs/providers.md](docs/providers.md) for the custom-LLM contract and the
+steps to go live against a real ElevenLabs agent.
+
 ## Roadmap
 
 | # | Milestone | Status |
@@ -76,7 +86,7 @@ curl -s localhost:8080/v1/chat/completions \
 | 1 | LangGraph agent + local text REPL | Done |
 | 2 | Tools and persistent memory (checkpointer) | Done |
 | 3 | OpenAI-compatible custom-LLM endpoint (FastAPI) | Done |
-| 4 | Connect ElevenLabs Conversational AI, text round-trip | Upcoming |
+| 4 | Connect ElevenLabs Conversational AI, text round-trip | In progress |
 | 5 | Containerize and deploy to panda-worker via local registry | Upcoming |
 | 6 | Tailscale Funnel exposes the webhook to the provider cloud | Upcoming |
 | 7 | Turn latency / token-cost metrics in Grafana | Upcoming |
@@ -89,9 +99,10 @@ src/voice_agent/
   agent.py        LangGraph StateGraph + persistent SQLite checkpointer
   tools.py        agent tools (time, timezone, calculator, remember/recall)
   memory_store.py SQLite-backed long-term facts (cross-conversation memory)
-  server.py       FastAPI OpenAI-compatible endpoint + /health + /metrics
+  server.py       FastAPI OpenAI-compatible endpoint, token streaming + /metrics
   chat.py         local text REPL (stable thread, persists across restarts)
   config.py       env-driven settings
+scripts/          elevenlabs_sim.py — replay the provider's request locally
 deploy/k8s/       Deployment (pinned to panda-worker) + Service + Secret example
 docs/             provider integration notes
 data/             local SQLite state (gitignored)

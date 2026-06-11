@@ -28,6 +28,44 @@ Setup:
 Caller -> ElevenLabs CAI (STT + turns + TTS) -> this service -> Claude
 ```
 
+### The custom-LLM contract (what ElevenLabs actually sends)
+
+ElevenLabs CAI POSTs an OpenAI-style chat-completion request to the URL you
+configure and reads back the reply. The body includes `messages`, `model`,
+`stream`, and extras this service intentionally ignores — `temperature`,
+`max_tokens`, `user_id`, `elevenlabs_extra_body`, and `tools` (the agent owns
+its own sampling and tools, see `agent.py`). System messages are dropped in
+favor of the agent's voice-tuned `SYSTEM_PROMPT`.
+
+When `stream: true`, the response must be Server-Sent Events: each chunk
+`data: {json}\n\n`, terminated by `data: [DONE]\n\n`, with
+`Content-Type: text/event-stream`. `server.py` streams Claude's tokens as they
+arrive so the provider's TTS can start speaking before the full reply is done —
+the main latency lever on a live call.
+
+### Milestone 4 — proving the text round-trip
+
+Before touching the ElevenLabs dashboard or a public URL, prove the contract
+locally by replaying the provider's exact request:
+
+```bash
+uvicorn voice_agent.server:app --port 8080      # terminal 1
+python scripts/elevenlabs_sim.py "what time is it in Tokyo?"   # terminal 2
+```
+
+The simulator POSTs a streaming, ElevenLabs-shaped request (extra fields and
+all), parses the SSE stream the way the provider does, and asserts the framing
+(incremental deltas + `[DONE]`).
+
+### Going live (needs an account + a public URL)
+
+1. Expose the local server with a tunnel — `ngrok http 8080` now, or the
+   Tailscale Funnel once deployed (milestone 6).
+2. In the ElevenLabs CAI agent, set LLM → **Custom LLM**, Server URL →
+   `https://<tunnel-host>/v1/chat/completions`.
+3. Open the agent's test chat and send a message; the reply should stream back.
+   That round-trip closes milestone 4. Add a voice and call it for milestone 5+.
+
 ## Option B (future) — Vapi or Retell + ElevenLabs voice
 
 Pick ONE orchestrator (Vapi or Retell — not both). It runs the call and STT

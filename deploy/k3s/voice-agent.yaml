@@ -68,4 +68,7 @@ spec:
     - name: http
       port: 8080
       targetPort: http
-  type: ClusterIP
+      # Fixed NodePort so Tailscale Funnel on panda-worker has a stable
+      # localhost target, independent of pod rescheduling.
+      nodePort: 30880
+  type: NodePort

@@ -24,6 +24,9 @@ spec:
         - name: voice-agent
           # Built and pushed to the control-plane local registry (NodePort 32034).
           image: panda-control:32034/voice-agent:0.1.0
+          # The 0.1.0 tag is reused across dev rebuilds; without this, K3s
+          # keeps the cached image on IfNotPresent and skips new digests.
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080

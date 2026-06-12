@@ -59,11 +59,6 @@ metadata:
   name: voice-agent
   labels:
     app: voice-agent
-  annotations:
-    # Scraped by Prometheus on panda-control.
-    prometheus.io/scrape: "true"
-    prometheus.io/path: "/metrics"
-    prometheus.io/port: "8080"
 spec:
   selector:
     app: voice-agent
@@ -75,3 +70,22 @@ spec:
       # localhost target, independent of pod rescheduling.
       nodePort: 30880
   type: NodePort
+---
+# kube-prometheus-stack uses the Prometheus Operator, which discovers
+# scrape targets via ServiceMonitor CRDs (not the prometheus.io/* Service
+# annotations). The "release: kube-prometheus-stack" label is required —
+# it matches the Prometheus CR's serviceMonitorSelector.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: voice-agent
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: voice-agent
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

@@ -90,7 +90,8 @@ steps to go live against a real ElevenLabs agent.
 | 5 | Containerize and deploy to panda-worker via local registry | Done |
 | 6 | Tailscale Funnel exposes the webhook to the provider cloud | Done |
 | 7 | Turn latency / token-cost metrics in Grafana | Done |
-| 8 | Option B: front with Vapi or Retell (config-only) | Future |
+| 8 | Live voice call: STT -> brain -> TTS round-trip via phone/widget | Upcoming |
+| 9 | Option B: front with Vapi or Retell (config-only) | Future |
 
 ## Layout
 

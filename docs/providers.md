@@ -76,6 +76,38 @@ all), parses the SSE stream the way the provider does, and asserts the framing
    and you'll see the POST hit `/v1/chat/completions` in the uvicorn log. That
    round-trip closes milestone 4. Add a voice and call it for milestone 5+.
 
+### Milestone 8 — voice round-trip (STT -> brain -> TTS)
+
+Everything proven so far (milestones 3-7) is the text contract underneath —
+no audio has been involved. This milestone exercises the actual voice path:
+
+```
+Caller (phone or browser mic) -> ElevenLabs STT -> this service -> Claude
+   -> ElevenLabs TTS -> Caller hears the reply
+```
+
+Steps:
+1. In the ElevenLabs CAI agent, confirm a **voice** is selected (TTS) — this
+   was set up in Option A but never exercised end-to-end with audio.
+2. Attach a way to actually talk to it:
+   - **Browser widget**: ElevenLabs agents have an embeddable voice widget
+     (mic in/speaker out) — easiest way to test without a phone number.
+   - **Phone number**: ElevenLabs CAI can provision/forward a number to the
+     agent for a real inbound call.
+3. Have a spoken conversation — multiple turns, including interruptions
+   (barge-in) — to see how turn-taking feels with real STT latency added in
+   front of the LLM call.
+4. Watch `voice_agent_turn_latency_seconds` in Grafana during the call and
+   compare to the text-only latency from milestone 7 — STT/TTS add fixed
+   overhead on top of what this service controls.
+5. Check the pod logs (`kubectl logs -f <voice-agent-pod>`) to confirm each
+   spoken turn still arrives as a normal `/v1/chat/completions` POST — from
+   this service's perspective, voice and text turns are identical requests.
+
+This closes the loop on what "voice agent" means: the brain (this service)
+was always provider-agnostic text in/text out: STT and TTS are entirely
+ElevenLabs' job, and this milestone is where you actually hear it work.
+
 ## Option B (future) — Vapi or Retell + ElevenLabs voice
 
 Pick ONE orchestrator (Vapi or Retell — not both). It runs the call and STT

@@ -1,0 +1,101 @@
+# Auto-loaded by the kube-prometheus-stack Grafana sidecar
+# (grafana-sc-dashboard watches for ConfigMaps labeled grafana_dashboard=1).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: voice-agent-grafana-dashboard
+  labels:
+    grafana_dashboard: "1"
+data:
+  voice-agent.json: |
+    {
+      "uid": "voice-agent",
+      "title": "Voice Agent",
+      "schemaVersion": 39,
+      "tags": ["voice-agent"],
+      "timezone": "browser",
+      "time": {"from": "now-6h", "to": "now"},
+      "refresh": "30s",
+      "panels": [
+        {
+          "id": 1,
+          "title": "Turn latency (p50 / p95)",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+          "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(voice_agent_turn_latency_seconds_bucket[5m])) by (le))",
+              "legendFormat": "p50",
+              "refId": "A"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(voice_agent_turn_latency_seconds_bucket[5m])) by (le))",
+              "legendFormat": "p95",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Turns / min",
+          "type": "timeseries",
+          "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+          "targets": [
+            {
+              "expr": "rate(voice_agent_turns_total[5m]) * 60",
+              "legendFormat": "turns/min",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Token throughput (tokens / min)",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+          "targets": [
+            {
+              "expr": "rate(voice_agent_input_tokens_total[5m]) * 60",
+              "legendFormat": "input tokens/min",
+              "refId": "A"
+            },
+            {
+              "expr": "rate(voice_agent_output_tokens_total[5m]) * 60",
+              "legendFormat": "output tokens/min",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "Cumulative LLM cost",
+          "type": "stat",
+          "gridPos": {"x": 12, "y": 8, "w": 6, "h": 8},
+          "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 4}, "overrides": []},
+          "targets": [
+            {
+              "expr": "voice_agent_cost_usd_total",
+              "legendFormat": "total cost",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "Cost / hour (rate)",
+          "type": "stat",
+          "gridPos": {"x": 18, "y": 8, "w": 6, "h": 8},
+          "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 4}, "overrides": []},
+          "targets": [
+            {
+              "expr": "rate(voice_agent_cost_usd_total[1h]) * 3600",
+              "legendFormat": "$/hr",
+              "refId": "A"
+            }
+          ]
+        }
+      ]
+    }

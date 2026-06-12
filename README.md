@@ -1,7 +1,7 @@
 # Voice Agent
 
 ![Status](https://img.shields.io/badge/Status-In%20Progress-yellow)
-![Phase](https://img.shields.io/badge/Phase-6%20Live%20via%20Funnel-blue)
+![Phase](https://img.shields.io/badge/Phase-7%20Metrics%20%26%20Dashboards-blue)
 ![LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-1C3C3C)
 ![FastAPI](https://img.shields.io/badge/Serving-FastAPI-009688?logo=fastapi&logoColor=white)
 ![Claude](https://img.shields.io/badge/LLM-Claude-D97757)
@@ -89,7 +89,7 @@ steps to go live against a real ElevenLabs agent.
 | 4 | Connect ElevenLabs Conversational AI, text round-trip | Done |
 | 5 | Containerize and deploy to panda-worker via local registry | Done |
 | 6 | Tailscale Funnel exposes the webhook to the provider cloud | Done |
-| 7 | Turn latency / token-cost metrics in Grafana | Upcoming |
+| 7 | Turn latency / token-cost metrics in Grafana | Done |
 | 8 | Option B: front with Vapi or Retell (config-only) | Future |
 
 ## Layout
@@ -103,7 +103,8 @@ src/voice_agent/
   chat.py         local text REPL (stable thread, persists across restarts)
   config.py       env-driven settings
 scripts/          elevenlabs_sim.py — replay the provider's request locally
-deploy/k3s/       Deployment (pinned to panda-worker) + Service + Secret example
+deploy/k3s/       Deployment (pinned to panda-worker) + Service + ServiceMonitor +
+                  Grafana dashboard ConfigMap + Secret example
 docs/             provider integration notes
 data/             local SQLite state (gitignored)
 ```

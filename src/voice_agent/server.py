@@ -32,6 +32,28 @@ TURN_LATENCY = Histogram(
     "voice_agent_turn_latency_seconds",
     "End-to-end latency of a single agent turn",
 )
+INPUT_TOKENS = Counter("voice_agent_input_tokens_total", "Total LLM input tokens")
+OUTPUT_TOKENS = Counter("voice_agent_output_tokens_total", "Total LLM output tokens")
+COST_USD = Counter("voice_agent_cost_usd_total", "Estimated cumulative LLM cost in USD")
+
+# $ per million tokens. Keyed by model so the estimate stays correct if
+# settings.llm_model changes; falls back to the sonnet-4-6 rate otherwise.
+_PRICE_PER_MTOK = {
+    "claude-sonnet-4-6": {"input": 3.0, "output": 15.0},
+    "claude-opus-4-8": {"input": 5.0, "output": 25.0},
+    "claude-haiku-4-5": {"input": 1.0, "output": 5.0},
+}
+
+
+def _record_usage(usage: dict | None) -> None:
+    if not usage:
+        return
+    in_tok = usage.get("input_tokens", 0)
+    out_tok = usage.get("output_tokens", 0)
+    INPUT_TOKENS.inc(in_tok)
+    OUTPUT_TOKENS.inc(out_tok)
+    price = _PRICE_PER_MTOK.get(settings.llm_model, _PRICE_PER_MTOK["claude-sonnet-4-6"])
+    COST_USD.inc(in_tok / 1_000_000 * price["input"] + out_tok / 1_000_000 * price["output"])
 
 
 class ChatMessage(BaseModel):
@@ -90,6 +112,9 @@ def _new_thread() -> dict:
 
 def _run_agent(messages: list[ChatMessage]) -> str:
     result = agent.invoke({"messages": _to_langchain(messages)}, _new_thread())
+    for msg in result["messages"]:
+        if isinstance(msg, AIMessage):
+            _record_usage(msg.usage_metadata)
     return result["messages"][-1].content
 
 
@@ -122,6 +147,7 @@ def _stream_agent_sse(messages: list[ChatMessage], model: str):
             {"messages": _to_langchain(messages)}, _new_thread(), stream_mode="messages"
         ):
             if isinstance(chunk, AIMessageChunk):
+                _record_usage(chunk.usage_metadata)
                 text = _content_text(chunk.content)
                 if text:
                     yield _sse(cid, created, model, {"content": text}, None)

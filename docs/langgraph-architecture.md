@@ -11,7 +11,7 @@ flowchart TD
 
     chatbot["chatbot node\n- prepend SYSTEM_PROMPT\n- model.invoke(messages)\n- model is bound to TOOLS"]
 
-    chatbot --> route{route():\nlast message has\ntool_calls?}
+    chatbot --> route{"route(): last message\nhas tool_calls?"}
 
     route -- "yes" --> tools["tools node = ToolNode(TOOLS)\n- look up each tool_call by name\n- invoke(args)\n- wrap result in ToolMessage"]
     route -- "no" --> END([END])

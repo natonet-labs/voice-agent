@@ -13,12 +13,13 @@ Endpoints:
 """
 
 import json
+import logging
 import time
 import uuid
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, Response, StreamingResponse
-from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from pydantic import BaseModel
 
@@ -26,6 +27,8 @@ from voice_agent.agent import agent
 from voice_agent.config import settings
 
 app = FastAPI(title="voice-agent", version="0.1.0")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+logger = logging.getLogger(__name__)
 
 TURNS = Counter("voice_agent_turns_total", "Total chat-completion turns handled")
 TURN_LATENCY = Histogram(
@@ -111,7 +114,11 @@ def _new_thread() -> dict:
 
 
 def _run_agent(messages: list[ChatMessage]) -> str:
+    logger.info("turn start — %d msg(s)", len(messages))
     result = agent.invoke({"messages": _to_langchain(messages)}, _new_thread())
+    tools_called = [m.name for m in result["messages"] if isinstance(m, ToolMessage) and m.name]
+    if tools_called:
+        logger.info("tools called: %s", tools_called)
     for msg in result["messages"]:
         if isinstance(msg, AIMessage):
             _record_usage(msg.usage_metadata)
@@ -141,18 +148,35 @@ def _stream_agent_sse(messages: list[ChatMessage], model: str):
     cid = f"chatcmpl-{uuid.uuid4().hex}"
     created = int(time.time())
     start = time.perf_counter()
+    n_msgs = len(messages)
+    logger.info("turn start — %d msg(s), stream=True", n_msgs)
     yield _sse(cid, created, model, {"role": "assistant"}, None)
+    tools_called: list[str] = []
+    words = 0
     try:
         for chunk, _meta in agent.stream(
             {"messages": _to_langchain(messages)}, _new_thread(), stream_mode="messages"
         ):
-            if isinstance(chunk, AIMessageChunk):
+            if isinstance(chunk, ToolMessage) and chunk.name:
+                tools_called.append(chunk.name)
+            elif isinstance(chunk, AIMessageChunk):
                 _record_usage(chunk.usage_metadata)
                 text = _content_text(chunk.content)
                 if text:
+                    words += len(text.split())
                     yield _sse(cid, created, model, {"content": text}, None)
+    except Exception:
+        logger.exception("agent error after %d msg(s)", n_msgs)
+        raise
     finally:
-        TURN_LATENCY.observe(time.perf_counter() - start)
+        elapsed = time.perf_counter() - start
+        TURN_LATENCY.observe(elapsed)
+        logger.info(
+            "turn done — %d word(s)%s, %.3fs",
+            words,
+            f", tools={tools_called}" if tools_called else "",
+            elapsed,
+        )
     yield _sse(cid, created, model, {}, "stop")
     yield "data: [DONE]\n\n"
 
@@ -179,7 +203,9 @@ def chat_completions(req: ChatCompletionRequest):
 
     start = time.perf_counter()
     text = _run_agent(req.messages)
-    TURN_LATENCY.observe(time.perf_counter() - start)
+    elapsed = time.perf_counter() - start
+    TURN_LATENCY.observe(elapsed)
+    logger.info("turn done — %d word(s), %.3fs", len(text.split()), elapsed)
 
     return JSONResponse(
         {

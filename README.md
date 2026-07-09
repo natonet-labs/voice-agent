@@ -1,7 +1,7 @@
 # Voice Agent
 
 ![Status](https://img.shields.io/badge/Status-In%20Progress-yellow)
-![Phase](https://img.shields.io/badge/Phase-7%20Metrics%20%26%20Dashboards-blue)
+![Phase](https://img.shields.io/badge/Phase-8%20Live%20Voice-blue)
 ![LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-1C3C3C)
 ![FastAPI](https://img.shields.io/badge/Serving-FastAPI-009688?logo=fastapi&logoColor=white)
 ![Claude](https://img.shields.io/badge/LLM-Claude-D97757)
@@ -90,7 +90,7 @@ steps to go live against a real ElevenLabs agent.
 | 5 | Containerize and deploy to panda-worker via local registry | Done |
 | 6 | Tailscale Funnel exposes the webhook to the provider cloud | Done |
 | 7 | Turn latency / token-cost metrics in Grafana | Done |
-| 8 | Live voice call: STT -> brain -> TTS round-trip via phone/widget | Upcoming |
+| 8 | Live voice call: STT -> brain -> TTS round-trip via phone/widget | Done |
 | 9 | Option B: front with Vapi or Retell (config-only) | Future |
 
 ## Layout

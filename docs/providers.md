@@ -70,8 +70,9 @@ all), parses the SSE stream the way the provider does, and asserts the framing
      *not* `/v1/chat/completions`; ElevenLabs appends that.
    - **Model ID**: any string (e.g. `voice-agent`); this server ignores it and
      uses its own configured Claude model.
-   - **API key**: the UI requires a secret named `OPENAI_API_KEY` — this server
-     does no auth, so any placeholder value (e.g. `unused`) works.
+   - **API key**: the UI requires a secret named `OPENAI_API_KEY`. Set it to
+     the same value as `VOICE_AGENT_API_KEY`; ElevenLabs sends it as
+     `Authorization: Bearer <key>`, and the server rejects requests without it.
 4. Open the agent's test chat and send a message; the reply should stream back,
    and you'll see the POST hit `/v1/chat/completions` in the uvicorn log. That
    round-trip closes milestone 4. Add a voice and call it for milestone 5+.

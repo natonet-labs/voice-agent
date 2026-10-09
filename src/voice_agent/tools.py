@@ -30,6 +30,24 @@ def get_time_in_timezone(tz_name: str) -> str:
         return f"Unknown timezone: {tz_name!r}"
 
 
+# Bounds for calculate(). Spoken expressions are short, and without a cap a
+# single power like 9**9**9 runs for minutes and ties up a server thread.
+_MAX_EXPRESSION_CHARS = 200
+_MAX_RESULT_BITS = 10_000
+
+
+def _bounded_pow(base, exponent):
+    if (
+        isinstance(base, int)
+        and isinstance(exponent, int)
+        and abs(base) > 1
+        and exponent > 0
+        and base.bit_length() * exponent > _MAX_RESULT_BITS
+    ):
+        raise ValueError("result too large")
+    return operator.pow(base, exponent)
+
+
 # Safe arithmetic: walk the AST and allow only numeric literals and these ops.
 _OPS = {
     ast.Add: operator.add,
@@ -38,7 +56,7 @@ _OPS = {
     ast.Div: operator.truediv,
     ast.FloorDiv: operator.floordiv,
     ast.Mod: operator.mod,
-    ast.Pow: operator.pow,
+    ast.Pow: _bounded_pow,
     ast.USub: operator.neg,
     ast.UAdd: operator.pos,
 }
@@ -60,6 +78,8 @@ def calculate(expression: str) -> str:
 
     For a percentage, pass the arithmetic form — e.g. "15% of 80" -> "0.15 * 80".
     """
+    if len(expression) > _MAX_EXPRESSION_CHARS:
+        return f"Expression too long (max {_MAX_EXPRESSION_CHARS} characters)."
     try:
         tree = ast.parse(expression, mode="eval")
         return str(_safe_eval(tree.body))

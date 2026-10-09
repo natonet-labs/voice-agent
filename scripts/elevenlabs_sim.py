@@ -19,6 +19,8 @@ import sys
 
 import httpx
 
+from voice_agent.config import settings
+
 URL = "http://localhost:8080/v1/chat/completions"
 
 
@@ -41,7 +43,9 @@ def main() -> int:
     print("bot> ", end="", flush=True)
 
     text, chunks, saw_done = "", 0, False
-    with httpx.stream("POST", URL, json=body, timeout=60.0) as resp:
+    # Same header ElevenLabs sends from its OPENAI_API_KEY secret.
+    headers = {"Authorization": f"Bearer {settings.voice_agent_api_key}"}
+    with httpx.stream("POST", URL, json=body, headers=headers, timeout=60.0) as resp:
         resp.raise_for_status()
         ctype = resp.headers.get("content-type", "")
         if "text/event-stream" not in ctype:

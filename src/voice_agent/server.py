@@ -12,12 +12,13 @@ Endpoints:
     GET  /metrics               Prometheus scrape target (panda-control scrapes this)
 """
 
+import hmac
 import json
 import logging
 import time
 import uuid
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
@@ -57,6 +58,26 @@ def _record_usage(usage: dict | None) -> None:
     OUTPUT_TOKENS.inc(out_tok)
     price = _PRICE_PER_MTOK.get(settings.llm_model, _PRICE_PER_MTOK["claude-sonnet-4-6"])
     COST_USD.inc(in_tok / 1_000_000 * price["input"] + out_tok / 1_000_000 * price["output"])
+
+
+def require_api_key(authorization: str | None = Header(default=None)) -> None:
+    """Reject requests without `Authorization: Bearer <VOICE_AGENT_API_KEY>`.
+
+    The endpoint is reachable from the public internet (Tailscale Funnel), and
+    every accepted request spends Anthropic credits and can read saved facts,
+    so it fails closed when the key isn't configured.
+    """
+    expected = settings.voice_agent_api_key
+    if not expected:
+        logger.error("VOICE_AGENT_API_KEY is not set; rejecting request")
+        raise HTTPException(status_code=503, detail="API key not configured")
+    scheme, _, given = (authorization or "").partition(" ")
+    if scheme != "Bearer" or not hmac.compare_digest(given.encode(), expected.encode()):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 class ChatMessage(BaseModel):
@@ -191,7 +212,7 @@ def metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
-@app.post("/v1/chat/completions")
+@app.post("/v1/chat/completions", dependencies=[Depends(require_api_key)])
 def chat_completions(req: ChatCompletionRequest):
     model = req.model or settings.llm_model
     TURNS.inc()

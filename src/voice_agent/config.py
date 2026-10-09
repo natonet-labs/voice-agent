@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     llm_model: str = "claude-sonnet-4-6"
 
+    # Shared secret the voice provider sends as `Authorization: Bearer <key>`
+    # on /v1/chat/completions. Required: the endpoint is public via Tailscale
+    # Funnel, and requests are rejected while this is unset.
+    voice_agent_api_key: str = ""
+
     # Persistent state: LangGraph checkpointer + long-term facts (SQLite)
     agent_db_path: str = "data/agent.sqlite"
 

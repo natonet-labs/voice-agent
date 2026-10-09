@@ -9,14 +9,22 @@ description = "LangGraph voice agent brain, served as an OpenAI-compatible custo
 requires-python = ">=3.11"
 dependencies = [
     "langgraph>=0.2",
-    "langgraph-checkpoint-sqlite>=2.0",
-    "langchain-anthropic>=0.2",
+    "langgraph-checkpoint-sqlite>=3.1.1",
+    "langchain-anthropic>=1.4.6",
     "langchain-core>=0.3",
     "fastapi>=0.110",
     "uvicorn[standard]>=0.27",
-    "pydantic-settings>=2.0",
+    "pydantic-settings>=2.14.2",
     "prometheus-client>=0.20",
     "tzdata>=2024.1",
+    # Security floors for transitive dependencies: versions below these have
+    # published advisories (pip-audit, 2026-10-09). The endpoint is public, so
+    # don't let a resolver or a stale build cache pick an older release.
+    "starlette>=1.3.1",
+    "anyio>=4.14.2",
+    "urllib3>=2.8.0",
+    "langsmith>=0.8.18",
+    "langgraph-sdk>=0.4.4",
 ]
 
 [project.optional-dependencies]

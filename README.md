@@ -23,19 +23,28 @@ Prometheus / Grafana stack.
 
 ## Architecture
 
-```
-   Caller
-     |
-     v
-  ElevenLabs Conversational AI        (Option A: transport + STT + TTS)
-     |  custom-LLM HTTPS
-     |  (exposed via Tailscale Funnel)
-     v
-  panda-worker (K3s, containerized)
-     |  FastAPI + LangGraph agent  ---> Claude API (LLM)
-     |  /metrics  --> Prometheus / Grafana (panda-control)
-     v
-  reply spoken back to the caller
+```mermaid
+flowchart TD
+    caller(["Caller<br/>phone or web widget"])
+    eleven["ElevenLabs Conversational AI (Option A)<br/>speech-to-text · turn-taking · text-to-speech"]
+    funnel["Tailscale Funnel<br/>public HTTPS"]
+
+    subgraph worker["panda-worker (K3s, containerized)"]
+        api["FastAPI · POST /v1/chat/completions<br/>requires Bearer VOICE_AGENT_API_KEY"]
+        agent["LangGraph agent<br/>chatbot ⇄ tools"]
+        db[("SQLite on a persistent volume<br/>conversation checkpoints + saved facts")]
+    end
+
+    claude["Claude API (LLM)"]
+    prom["Prometheus / Grafana<br/>(panda-control)"]
+
+    caller <-->|speech| eleven
+    eleven <-->|"custom-LLM request /<br/>reply streamed as SSE"| funnel
+    funnel <--> api
+    api <--> agent
+    agent <--> db
+    agent <-->|"messages + tool calls"| claude
+    prom -.->|"scrapes /metrics"| api
 ```
 
 The provider front end is swappable — ElevenLabs now (Option A), Vapi or Retell

@@ -13,6 +13,9 @@ venv/
 *.local.yaml
 secret.yaml
 
+# Local agent state (SQLite checkpointer + facts)
+data/
+
 # Tooling
 .pytest_cache/
 .ruff_cache/

@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voice-agent
+  labels:
+    app: voice-agent
+spec:
+  replicas: 1
+  # Stop the old pod before starting the new one so two processes never have
+  # the SQLite database open at once during a rollout.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: voice-agent
+  template:
+    metadata:
+      labels:
+        app: voice-agent
+    spec:
+      # Pin to the worker: keeps the LangGraph load off panda-control so the
+      # control plane stays free for the host-native NPU CV services.
+      # To let it use BOTH nodes later (HPA / redundancy), remove this block
+      # and add a podAntiAffinity instead.
+      nodeSelector:
+        kubernetes.io/hostname: panda-worker
+      containers:
+        - name: voice-agent
+          # Built and pushed to the control-plane local registry (NodePort 32034).
+          image: panda-control:32034/voice-agent:0.1.0
+          # The 0.1.0 tag is reused across dev rebuilds; without this, K3s
+          # keeps the cached image on IfNotPresent and skips new digests.
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: voice-agent-secrets
+          # SQLite checkpointer + remembered facts (AGENT_DB_PATH defaults to
+          # data/agent.sqlite under WORKDIR /app). Without a volume they're
+          # lost every time the pod is replaced.
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: voice-agent-data
+---
+# K3s's built-in local-path provisioner stores this on panda-worker's disk,
+# which is fine because the Deployment is pinned there.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: voice-agent-data
+  labels:
+    app: voice-agent
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: voice-agent
+  labels:
+    app: voice-agent
+spec:
+  selector:
+    app: voice-agent
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      # Fixed NodePort so Tailscale Funnel on panda-worker has a stable
+      # localhost target, independent of pod rescheduling.
+      nodePort: 30880
+  type: NodePort
+---
+# kube-prometheus-stack uses the Prometheus Operator, which discovers
+# scrape targets via ServiceMonitor CRDs (not the prometheus.io/* Service
+# annotations). The "release: kube-prometheus-stack" label is required —
+# it matches the Prometheus CR's serviceMonitorSelector.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: voice-agent
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: voice-agent
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

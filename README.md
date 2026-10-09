@@ -65,15 +65,18 @@ contract. See [docs/providers.md](docs/providers.md).
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e .
-cp .env.example .env        # set ANTHROPIC_API_KEY
+cp .env.example .env        # set ANTHROPIC_API_KEY and VOICE_AGENT_API_KEY
 voice-agent-chat            # text REPL against the LangGraph agent
 ```
 
-Run the HTTP endpoint locally:
+Run the HTTP endpoint locally. Requests need the `VOICE_AGENT_API_KEY`
+from `.env` as a Bearer token (the server rejects everything while it's unset):
 
 ```bash
 uvicorn voice_agent.server:app --reload --port 8080
+export VOICE_AGENT_API_KEY=$(grep '^VOICE_AGENT_API_KEY=' .env | cut -d= -f2-)
 curl -s localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer $VOICE_AGENT_API_KEY" \
   -H 'content-type: application/json' \
   -d '{"messages":[{"role":"user","content":"hello"}]}' | jq
 ```
@@ -87,6 +90,32 @@ python scripts/elevenlabs_sim.py "what time is it in Tokyo?"
 
 See [docs/providers.md](docs/providers.md) for the custom-LLM contract and the
 steps to go live against a real ElevenLabs agent.
+
+## Exposing it publicly (Tailscale Funnel)
+
+The voice provider calls the agent from the internet, so `panda-worker`
+publishes it with Tailscale Funnel. Publish **only `/v1`**: `/health` and
+`/metrics` are unauthenticated (for Kubernetes probes and Prometheus, which
+reach them inside the cluster), and Funnel would otherwise expose them too.
+
+On `panda-worker`:
+
+```bash
+sudo tailscale funnel --bg --set-path=/v1 http://127.0.0.1:30880/v1
+tailscale funnel status     # |-- /v1 proxy http://127.0.0.1:30880/v1
+```
+
+Funnel strips the mount path before proxying, so the target must end in `/v1`
+for `/v1/chat/completions` to reach the server unchanged. `30880` is the fixed
+NodePort from `deploy/k3s/voice-agent.yaml`. Changes can take a few seconds to
+go live.
+
+Check from any machine (`<funnel-host>` is the node's `*.ts.net` name):
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://<funnel-host>/v1/chat/completions  # 401
+curl -s -o /dev/null -w '%{http_code}\n' https://<funnel-host>/metrics                     # 404
+```
 
 ## Roadmap
 

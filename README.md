@@ -131,10 +131,6 @@ curl -s -o /dev/null -w '%{http_code}\n' https://<funnel-host>/metrics          
 | 8 | Live voice call: STT -> brain -> TTS round-trip on the ElevenLabs agent Preview page (browser mic) | Done |
 | 9 | Option B: front with Vapi or Retell (config-only) | Future |
 
-Milestone 8 was verified by talking to the agent on its Preview page in the
-ElevenLabs dashboard. The embeddable website widget and a phone number / IVR
-haven't been set up, so those entry points are untested.
-
 ## Layout
 
 ```

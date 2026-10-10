@@ -128,7 +128,7 @@ curl -s -o /dev/null -w '%{http_code}\n' https://<funnel-host>/metrics          
 | 5 | Containerize and deploy to panda-worker via local registry | Done |
 | 6 | Tailscale Funnel exposes the webhook to the provider cloud | Done |
 | 7 | Turn latency / token-cost metrics in Grafana | Done |
-| 8 | Live voice call: STT -> brain -> TTS round-trip via phone/widget | Done |
+| 8 | Live voice call: STT -> brain -> TTS round-trip on the ElevenLabs agent Preview page (browser mic) | Done |
 | 9 | Option B: front with Vapi or Retell (config-only) | Future |
 
 ## Layout

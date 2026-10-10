@@ -105,6 +105,10 @@ Steps:
    spoken turn still arrives as a normal `/v1/chat/completions` POST — from
    this service's perspective, voice and text turns are identical requests.
 
+**How it was verified:** a spoken conversation on the agent's **Preview**
+page in the ElevenLabs dashboard (Agents -> your agent -> Preview), using the
+browser microphone and speaker.
+
 This closes the loop on what "voice agent" means: the brain (this service)
 was always provider-agnostic text in/text out: STT and TTS are entirely
 ElevenLabs' job, and this milestone is where you actually hear it work.

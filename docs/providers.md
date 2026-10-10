@@ -105,12 +105,12 @@ Steps:
    spoken turn still arrives as a normal `/v1/chat/completions` POST — from
    this service's perspective, voice and text turns are identical requests.
 
-**How it was verified:** a spoken conversation in the ElevenLabs
-agent's built-in voice test (browser microphone and speaker in the ElevenLabs
-portal). No phone number or IVR was attached, so the phone path (step 2's
-second option) is still untested. It would reach this service as the same
-`/v1/chat/completions` requests, but carrier audio and call setup weren't
-exercised.
+**How it was verified:** a spoken conversation on the agent's **Preview**
+page in the ElevenLabs dashboard (Agents -> your agent -> Preview), using the
+browser microphone and speaker. Neither option in step 2 has been set up yet:
+the widget isn't embedded on a site, and no phone number or IVR is attached.
+Both would reach this service as the same `/v1/chat/completions` requests, but
+they haven't been exercised.
 
 This closes the loop on what "voice agent" means: the brain (this service)
 was always provider-agnostic text in/text out: STT and TTS are entirely
